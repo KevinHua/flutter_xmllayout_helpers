@@ -94,7 +94,7 @@ class AnimationBuilder extends StatefulWidget {
 
   ///Function to be called every time the status of the animation changes.
   ///
-  ///The customListener is provided with an [AnimationStatus, AnimationSetup] object.
+  ///The statusListener is provided with an [AnimationStatus, AnimationSetup] object.
   final Function(AnimationStatus) statusListener;
 
   ///The build strategy currently used for one Tween. AnimationBuilder widget rebuilds
@@ -141,8 +141,10 @@ class AnimationBuilderState extends State<AnimationBuilder>
 
   VoidCallback _listener;
   Function(AnimationStatus) _statusListener;
-  Function(AnimationStatus) _repeatStatusListener;
   Function() _endAnimationListener;
+
+  // internal listener to repeat or circle the animation
+  Function(AnimationStatus) _repeatStatusListener;
 
   bool get _controllerIsDisposed => '$controller'.contains("DISPOSED");
 
@@ -152,6 +154,12 @@ class AnimationBuilderState extends State<AnimationBuilder>
   @override
   void initState() {
     _tween = widget.tween ?? Tween<double>(begin: 0, end: 1);
+
+    // to make xml listener properties works
+    _listener = widget.customListener;
+    _statusListener = widget.statusListener;
+    _endAnimationListener = widget.endAnimationListener;
+
     _initAnimation(
         dispose: false,
         trigger: widget.autoTrigger,
@@ -163,15 +171,17 @@ class AnimationBuilderState extends State<AnimationBuilder>
   _initAnimation(
       {bool trigger = false, int cycles, int repeats, bool dispose = false}) {
     if (controller == null || _controllerIsDisposed) {
-      _controller = widget.controller ?? AnimationController(duration: widget.duration, vsync: this);
+      _controller = widget.controller ??
+          AnimationController(duration: widget.duration, vsync: this);
     }
-    _animation = _tween
-        .animate(widget.animation ?? CurvedAnimation(parent: controller, curve: widget.curve));
+    _animation = _tween.animate(widget.animation ??
+        CurvedAnimation(parent: controller, curve: widget.curve));
 
     if (widget.tweenMap != null) {
       _animationMap = {};
       widget.tweenMap?.forEach((k, v) {
-        final anim = widget.animation ?? CurvedAnimation(parent: controller, curve: widget.curve);
+        final anim = widget.animation ??
+            CurvedAnimation(parent: controller, curve: widget.curve);
         _animationMap[k] = v.animate(anim);
       });
     }
